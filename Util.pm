@@ -9,14 +9,14 @@ package SNMP::Util;
 ## Author:  Wayne Marquette - 6/2/98 - New library
 
 ## Compiler directives.
-#use strict;
+use strict;
 
 ## Module import.
 use SNMP;
 use FileHandle qw(autoflush);
 use SNMP::Util_env;
 use vars qw($VERSION);
-$VERSION = "1.2";
+$VERSION = "1.3";
 
 
 autoflush STDOUT;
@@ -354,6 +354,7 @@ sub get {
        $error,
        $error_index,
        $format,
+       $hash,
        $oid_list,
        $poll,
        $poll_result,
@@ -428,7 +429,7 @@ sub get {
 		return $self->error("oper: ","SNMP::Util::get failed $error\n");
 	    }
 	    else{
-		if ($return_type eq array){
+		if ($return_type eq 'array'){
 		    @values = &format_array($format,$vars);
 		    if (@values == 1){
 			$value = $values[0];
@@ -437,8 +438,8 @@ sub get {
 		    return (@values);
 		}
 		elsif ($return_type eq 'hash'){
-		    $values = &format_hash($format,$vars);
-		    return ($values);
+		    $hash = &format_hash($format,$vars);
+		    return ($hash);
 		}
 	    }
 	}
@@ -456,8 +457,8 @@ sub get {
 	    return (@values);
 	}
 	elsif ($return_type eq 'hash'){
-	    $values = &format_hash($format,$vars);
-	    return ($values);
+	    $hash = &format_hash($format,$vars);
+	    return ($hash);
 	}
     }
 
@@ -474,7 +475,7 @@ sub get_hash {
 
     $hash;
     
-} # end sub walk_hash
+} # end sub get_hash
 
 
 sub set {
@@ -852,17 +853,21 @@ sub walk {
        $loop_stuck,
        $name,
        $name_indexed,
+       $oid,
        $oid_hash,
        $oid_list,
+       $oid_indexed,
        $poll,
        $poll_result,
        $print,
        $return_type,
        $snmp,
        $temp_hash,
+       $temp_value,
        $test,
        $type,
        $vars,
+       $value,
        $IP,
        %args,
        @patterns,
@@ -1812,6 +1817,7 @@ sub format_hash {
     my($format, $vars) = @_;
     my(
        $enum,
+       $hash,
        $i,
        $instance,
        $name,
@@ -1857,6 +1863,8 @@ sub format_hash {
 
 sub convert_value{
     my($format,$name,$type,$temp_value) = @_;
+
+    my($value);
 
     if ($format =~ /e/){
 	#Convert the packed data to hex format (octet-string)
@@ -2219,7 +2227,7 @@ C<use SNMP::Util;>
 ## Documentation (POD)
 =head1 NAME
 
- Perl SNMP utilities - SNMP::Util - Version 1.2
+ Perl SNMP utilities - SNMP::Util - Version 1.3
 
 
 =head1 DESCRIPTION
@@ -2233,6 +2241,7 @@ module writted by Joe Marzot.
     1.0 Initial Release
     1.1 Fixed Manifest File
     1.2 Added get_hash / walk_hash now calls walk / Modified output in poll_value
+    1.3 Added use strict to library and fixed some bugs with my vars
 
 =head1 Software requirements
 
