@@ -1,0 +1,50 @@
+  Documentation
+  -------------
+
+    User documentation in POD format is contained within the module
+    source (i.e. the .pm file).  Installing using "make install"
+    places this documentation in a man page in the perl library under
+    the directory "man/man3".  There is also html documentation in this
+    directory.
+
+
+
+  Installation
+  ------------
+
+    To install, cd to the directory containing the unpacked
+    distribution and do one of the following:
+
+        Create a makefile by running Makefile.PL using the perl
+        program into whose library you want to install and then run
+        make three times:
+
+            perl Makefile.PL
+            make
+
+            *********************************************************************************
+            Note: Edit the Util_env.pm file and add the correct mibs before executing make test
+            *********************************************************************************
+
+            make test
+            make install
+
+        To install into a private library, for example your home
+        directory:
+
+            perl Makefile.PL INSTALLSITELIB=$HOME/lib INSTALLMAN3DIR=$HOME/man
+            make
+
+            *********************************************************************************
+            Note: Edit the Util_env.pm file and add the correct mibs before executing make test
+            *********************************************************************************
+
+            make test
+            make pure_install
+
+        Alternatively, you can just copy or move Util.pm
+        from the distribution into a directory named SNMP/ in the Perl
+        library.  You can then manually build the documentation using
+        pod2man or pod2html.
+
+
