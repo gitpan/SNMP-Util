@@ -1,12 +1,12 @@
 use ExtUtils::MakeMaker;
 use FileHandle;
 
-print "Checking for SNMP, V1.7 or later ... ";
+print "Checking for SNMP, V1.8  ";
 $@ = '';
-eval "use SNMP 1.7 ();";
+eval "use SNMP 1.8 ();";
 if ($@) {
     $ok = 0;
-    print("\nYou don't have installed the SNMP module, version 1.7 or",
+    print("\nYou don't have installed the SNMP module, version 1.8 or",
           " later.\n");
 } else {
     print "ok\n";

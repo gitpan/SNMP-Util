@@ -6,7 +6,7 @@ SYNOPSIS
 
     ## Documentation (POD) =head1 NAME
 
-     Perl SNMP utilities - SNMP::Util - Version 1.7
+     Perl SNMP utilities - SNMP::Util - Version 1.8
 
 DESCRIPTION
     This Perl library is a set of utilities for configuring and monitoring SNMP based devices. This library requires
@@ -23,6 +23,7 @@ Version
         Joe Marzot's version 1.8).
     1.6 Updated docs html and text
     1.7 Includes patches from Charles Anderson
+    1.8 Includes patches from tyoshida
 Software requirements
     The following applications need to be built and installed before running the SNMP::Util application.
 

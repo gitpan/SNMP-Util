@@ -16,7 +16,7 @@ use SNMP;
 use FileHandle qw(autoflush);
 use SNMP::Util_env;
 use vars qw($VERSION);
-$VERSION = "1.7";
+$VERSION = "1.8";
 
 
 autoflush STDOUT;
@@ -1023,7 +1023,7 @@ sub walk {
 	    }
 
 
-	    if (defined $tmp_patterns[$i] && $oid_indexed =~ /$tmp_patterns[$i]/){
+	    if (defined $tmp_patterns[$i] && $oid_indexed =~ /^$tmp_patterns[$i]\./){
 		push @oid_list,$name_indexed;
 		push @patterns,$tmp_patterns[$i];
 		if ($return_type eq 'hash'){
@@ -2226,7 +2226,7 @@ C<use SNMP::Util;>
 ## Documentation (POD)
 =head1 NAME
 
- Perl SNMP utilities - SNMP::Util - Version 1.7
+ Perl SNMP utilities - SNMP::Util - Version 1.8
 
 
 =head1 DESCRIPTION
@@ -2246,6 +2246,7 @@ module writted by Joe Marzot.
         Joe Marzot's version 1.8).
     1.6 Updated docs html and text
     1.7 Includes patches from Charles Anderson 
+    1.8 Includes patches from  tyoshida
 
 =head1 Software requirements
 
