@@ -16,7 +16,7 @@ use SNMP;
 use FileHandle qw(autoflush);
 use SNMP::Util_env;
 use vars qw($VERSION);
-$VERSION = "1.4";
+$VERSION = "1.5";
 
 
 autoflush STDOUT;
@@ -1665,13 +1665,13 @@ sub set_list_to_names_and_oids{
 	    $type = &SNMP::getType($name);
 	    $i++;
 	    if ($temp_value =~ /^\d+/ && $type =~ /integer/i){
-		$value = &SNMP::mapEnum([$name],$temp_value);
+		$value = &SNMP::mapEnum($name,$temp_value);
                 $value = $temp_value if (!defined $value ||  $value eq '');
 	        push @oid_names,"$name.$instance",$value;
 	        push @oids,"$oid.$instance",$temp_value;
 	    }
 	    elsif ($temp_value =~ /^[a-zA-Z]/ && $type =~ /integer/i){
-		$value = &SNMP::mapInt([$name],$temp_value);
+		$value = &SNMP::mapEnum($name,$temp_value);
                 $value = $temp_value if (!defined $value || $value eq '');
 	        push @oid_names,"$name.$instance",$temp_value;
 	        push @oids,"$oid.$instance",$value;
@@ -1691,13 +1691,13 @@ sub set_list_to_names_and_oids{
 	    $i++;
 
 	    if ($temp_value =~ /^\d+/ && $type =~ /integer/i){
-		$value = &SNMP::mapEnum([$name],$temp_value);
+		$value = &SNMP::mapEnum($name,$temp_value);
                 $value = $temp_value if (!defined $value || $value eq '');
 	        push @oid_names,"$name.$instance",$value;
                 push @oids,"$oid.$instance",$temp_value;
 	    }
 	    elsif ($temp_value =~ /^[a-zA-Z]/ && $type =~ /integer/i){
-		$value = &SNMP::mapInt([$name],$temp_value);
+		$value = &SNMP::mapEnum($name,$temp_value);
                 $value = $temp_value if (!defined $value || $value eq '');
                 push @oid_names,"$name.$instance",$temp_value;
 	        push @oids,"$oid.$instance",$value;
@@ -1715,13 +1715,13 @@ sub set_list_to_names_and_oids{
 	    $type = &SNMP::getType($name);
 	    $i+=2;
 	    if ($temp_value =~ /^\d+/ && $type =~ /integer/i){
-		$value = &SNMP::mapEnum([$name],$temp_value);
+		$value = &SNMP::mapEnum($name,$temp_value);
                 $value = $temp_value if (!defined $value || $value eq '');
 	        push @oid_names,"$name.$instance",$value;
                 push @oids,"$oid.$instance",$temp_value;
 	    }
 	    elsif ($temp_value =~ /^[a-zA-Z]/ && $type =~ /integer/i){
-		$value = &SNMP::mapInt([$name],$temp_value);
+		$value = &SNMP::mapEnum($name,$temp_value);
                 $value = $temp_value if (!defined $value || $value eq '');
                 push @oid_names,"$name.$instance",$temp_value;
 	        push @oids,"$oid.$instance",$value;
@@ -1882,7 +1882,7 @@ sub convert_value{
     }
     elsif ($format =~ /v/){
 	if ($type =~ /integer/i && $temp_value =~ /^[a-zA-Z]/){
-	    $value = &SNMP::mapInt([$name],$temp_value);
+	    $value = &SNMP::mapEnum($name,$temp_value);
 	    $value = $temp_value if (!defined $value || $value eq '');
 	}
 	elsif ($type =~ /octet/i){
@@ -2226,7 +2226,7 @@ C<use SNMP::Util;>
 ## Documentation (POD)
 =head1 NAME
 
- Perl SNMP utilities - SNMP::Util - Version 1.4
+ Perl SNMP utilities - SNMP::Util - Version 1.5
 
 
 =head1 DESCRIPTION
@@ -2242,6 +2242,8 @@ module writted by Joe Marzot.
     1.2 Added get_hash / walk_hash now calls walk / Modified output in poll_value
     1.3 Added use strict to library and fixed some bugs with my vars
     1.4 Fixed code to elminate perl warning
+    1.5 Changed all mapInt functions to mapEnum - (support for mapInt not in 
+        Joe Marzot's version 1.8).
 
 =head1 Software requirements
 

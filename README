@@ -14,6 +14,8 @@
     1.2 Added get_hash / walk_hash now calls walk / Modified output in poll_value
     1.3 Added use strict to library and fixed some bugs with my vars
     1.4 Fixed code to elminate perl warning
+    1.5 Changed all mapInt functions to mapEnum - (support for mapInt not in
+        Joe Marzot's version 1.8).
 
   Documentation
   -------------
