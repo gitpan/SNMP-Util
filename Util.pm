@@ -16,13 +16,13 @@ use SNMP;
 use FileHandle qw(autoflush);
 use SNMP::Util_env;
 use vars qw($VERSION);
-$VERSION = "1.1";
+$VERSION = "1.2";
 
 
 autoflush STDOUT;
 
 ## Initalize Globals
-use vars qw($Delimiter $Max_log_level); 
+use vars qw($Delimiter $Max_log_level $Return_type); 
 
 @Util::EXPORT_OK = qw (
                        index_get_array
@@ -100,7 +100,7 @@ sub new {
 	}
 	elsif (/^-delimiter/ || /^octet-delimit/){ # Change delimiter for octet string output
 	    $Delimiter = $args{$_};
-	} 
+	}
 	else {
 	    die "Invalid argument - \"$_\"";
 	}
@@ -155,7 +155,8 @@ sub new {
     else{
 	$SNMP::verbose = 0;
     }
-
+    
+    $Return_type = 'array';
     
     # Initialize mib
     &SNMP::initMib();
@@ -356,6 +357,7 @@ sub get {
        $oid_list,
        $poll,
        $poll_result,
+       $return_type,
        $snmp,
        $value,
        $vars,
@@ -409,6 +411,8 @@ sub get {
     $error = $snmp->{ErrorStr};
     $error_index = $snmp->{ErrorInd};
 
+    $return_type = $Return_type;
+    
 
     if ($error ne ''){
 	&log_error($self,'get',$error,$oid_list,$error_index);
@@ -424,12 +428,18 @@ sub get {
 		return $self->error("oper: ","SNMP::Util::get failed $error\n");
 	    }
 	    else{
-		@values = &format_array($format,$vars);
-		if (@values == 1){
-		    $value = $values[0];
-		    return($value);
+		if ($return_type eq array){
+		    @values = &format_array($format,$vars);
+		    if (@values == 1){
+			$value = $values[0];
+			return($value);
+		    }
+		    return (@values);
 		}
-		return (@values);
+		elsif ($return_type eq 'hash'){
+		    $values = &format_hash($format,$vars);
+		    return ($values);
+		}
 	    }
 	}
 	else{
@@ -437,18 +447,34 @@ sub get {
 	}
     }
     else{
-	@values = &format_array($format,$vars);
-	#Return single value if array only has one value
-	if (@values == 1){
-	    $value = $values[0];
-	    return($value);
-	}
-	else{
+	if ($return_type eq 'array'){
+	    @values = &format_array($format,$vars);
+	    if (@values == 1){
+		$value = $values[0];
+		return($value);
+	    }
 	    return (@values);
+	}
+	elsif ($return_type eq 'hash'){
+	    $values = &format_hash($format,$vars);
+	    return ($values);
 	}
     }
 
 } # end sub get
+
+sub get_hash {
+    my($self, @args) = @_;
+
+    my($hash);
+
+    $SNMP::Util::Return_type = 'hash';
+    $hash = $self->get(@args);
+    $SNMP::Util::Return_type = 'array';
+
+    $hash;
+    
+} # end sub walk_hash
 
 
 sub set {
@@ -818,6 +844,7 @@ sub walk {
        $error,
        $error_index,
        $format,
+       $hash,
        $i,
        $instance,
        $loop,
@@ -830,8 +857,11 @@ sub walk {
        $poll,
        $poll_result,
        $print,
+       $return_type,
        $snmp,
+       $temp_hash,
        $test,
+       $type,
        $vars,
        $IP,
        %args,
@@ -888,6 +918,8 @@ sub walk {
     $IP = $self->{IP};
 
     $snmp = $self->{snmp};
+
+    $return_type = $Return_type;
 
     ## Clear any previous errors.
     $self->error_reset;
@@ -971,197 +1003,6 @@ sub walk {
 	@oid_list = ();
 	for ($i = 0; $i<= $#tmp_oid_list; $i++){
 	    $name = $vars->[$i]->[0];
-	    $oid = &SNMP::translateObj($name);
-	    $oid =~ s/\.//;
-	    $instance = $vars->[$i]->[1];
-	    if (!defined $instance || $instance eq ''){
-		$name_indexed = $name;
-		$oid_indexed = $oid;
-	    }
-	    else{
-		$name_indexed = "$name.$instance";
-		$oid_indexed = "$oid.$instance";
-	    }
-	    
-
-	    if (defined $tmp_patterns[$i] && $oid_indexed =~ /$tmp_patterns[$i]/){
-		push @oid_list,$name_indexed;
-		push @patterns,$tmp_patterns[$i];
-	    }
-	    else{
-		$test = 0;
-	    }
-	} 
-	if ($test){
-	    if ($loop > 1 && $error =~ /nosuch/i){ ##End of mib ??
-		return @walk_values;
-	    }
-	    @values = &format_array($format,$vars);
-	    print "@values\n" if ($print); 
-	    push @walk_values,@values;
-	}
-	$loop++;
-    }
-    return @walk_values;
-    
-} # end sub walk
-
-sub walk_hash {
-    my($self, @args) = @_;
-    my(
-       $error,
-       $error_index,
-       $enum,
-       $format,
-       $hash,
-       $i,
-       $instance,
-       $loop,
-       $loop_retry,
-       $loop_stuck,
-       $name,
-       $name_indexed,
-       $oid_list,
-       $oid_hash,
-       $octet,
-       $octet_string,
-       @octets,
-       $poll,
-       $poll_result,
-       $snmp,
-       $tc,
-       $test,
-       $type,
-       $temp_value,
-       $value,
-       $vars,
-       $IP,
-       %args,
-       @oid_list,
-       @oids,
-       @patterns,
-       @tmp_oid_list,
-       @tmp_patterns,
-       @values,
-       @walk_values,
-       );
-    
-    ## Determine if caller is using positional format or dashed args.
-    ## If first arg start with a dash, all args must be of that format.
-    if ($args[0] !~ /^-/) {
-	## Arguments were supplied as positional.
-	($format, @oid_list) = @args;
-    }
-    else {
-	## Parse named args.
-	%args = @args;
-	foreach (keys %args) {
-	    if (/^-format$/) {
- 		$format = $args{$_};
-	    }
-	    elsif (/^-oids$/) {
-		$oid_list = $args{$_};
-		(ref $oid_list eq 'ARRAY') 
-		    or die "Value of \"-oids\" must be an array ref";
-	    }
-	    else {
-		die "Invalid argument to SNMP::Util::walk: \"$_\"";
-	    }
-	}
-    }
-
-    $oid_list = \@oid_list unless defined $oid_list;
-
-    ## Variable init.
-    $poll = $self->{poll};
-    $IP = $self->{IP};
-    
-
-    $snmp = $self->{snmp};
-
-    ## Clear any previous errors.
-    $self->error_reset;
-
-   &log('debug',"\nsnmpwalk $IP @$oid_list\n");
-
-    #Convert oid list to hash and then array
-    $oid_hash = &get_list_to_names_and_oids($oid_list);
-    @oid_list = @{$oid_hash->{names}};
-    @oids = @{$oid_hash->{oids}};
-    @patterns = @oids;
-    
-
-    @walk_values = ();
-    $loop = 1;
-    $loop_retry = 1;
-    $loop_stuck = 1;
-
-
-    while (@oid_list){
-	$oid_list = \@oid_list;
-	$vars = &build_get_var_list($oid_list);
-	$snmp->getnext($vars);
-	
-	$error = $snmp->{ErrorStr};
-    	$error_index = $snmp->{ErrorInd};
-	
-	if ($error ne ''){
-	    &log_error($self,'walk',$error,$oid_list,$error_index);
-	    if ($poll && $error =~ /timeout/i){
-		## Poll for device if timeout retry times
-		$poll_result = $self->poll_device
-		    or return $self->error("oper: ", "SNMP::Util::poll_device failed\n"); 
-		
-		
-		$snmp->getnext($vars);
-	    
-		$error = $snmp->{ErrorStr};
-		if ($error ne ''){
-		    &log_error($self,'next',$error,$oid_list,$error_index);
-		    return $self->error("oper: ", "SNMP::Util:: walk failed $error\n");
-		}
-	    }
-	    else{
-		if ($loop > 1 && $error =~ /nosuch/i){ #End of mib??
-		    &log("fail","\nnosuchName error End of Mib??\n\n");
-		}
-		else{
-		    return $self->error("oper: ", "SNMP::Util::walk failed $error\n");
-		}
-	    }
-	}
-
-   	# Check for timeout and retry if it's not the first next
-	if ($error =~  /timeout/i){
-	    if ($loop == 1){
-		&log_error($self,'walk',$error,$oid_list,$error_index);
-		return $self->error("oper: ", "SNMP::Util::walk failed timeout\n");
-	    }
-	    elsif ($loop > 1){ #Retry on timeout if not first time through loop
-		if ($loop_retry <  4){ #
-		    $loop_retry++;
-		    next unless ($loop_retry == 3);
-		    &log_error($self,'walk',$error,$oid_list,$error_index);
-		    return $self->error("oper: ", "SNMP::Util::walk timeout\n");
-		}
-	    }
-	}
-	elsif (@tmp_oid_list && ($oid_list[0] eq $tmp_oid_list[0]) && $loop_stuck < 11){ # Abort infinite loop
-	    $loop_stuck++;
-	    next unless ($loop_stuck == 10);
-	    &log_error($self,'walk','Exiting infinite loop',$oid_list,$error_index);
-	    return $self->error("fatal: ","Exiting infinite loop\n");
-	}
-
-        $loop_stuck = 1;
-	$loop_retry = 1;
-	
-	@tmp_oid_list = @oid_list;
-	@tmp_patterns = @patterns;
-	@patterns = ();
-	@oid_list = ();
-	for ($i = 0; $i<= $#tmp_oid_list; $i++){
-	    $name = $vars->[$i]->[0];
 	    $temp_value = $vars->[$i]->[2];
             $type = $vars->[$i]->[3];
 	    $oid = &SNMP::translateObj($name);
@@ -1177,48 +1018,56 @@ sub walk_hash {
 	    }
 
 
-	    if ($format =~ /e/){
-		#Convert the packed data to hex format (octet-string)
-		if ($type =~ /octet/i){
-		    $value = &unpack_octet($name,$temp_value);
-		}
-		elsif ($type =~ /integer/i){
-		    $value = $temp_value;
-		}
-		elsif ($type =~ /ticks/i) {
-		    $value = &decode_uptime($temp_value);
-		}
-                else{
-	            $value = $temp_value;
-                }
-	    }
-	    elsif ($format =~ /v/){
-		if ($type =~ /integer/i && $temp_value =~ /^[a-zA-Z]/){
-		    $value = &SNMP::mapInt([$name],$temp_value);
-                    $value = $temp_value if (!defined $value || $value eq '');
-		}
-		elsif ($type =~ /octet/i){
-		    $value = &unpack_octet($name,$temp_value);
-		}
-	        else{
-	            $value = $temp_value;
-                }
-	    }
-	    
 	    if (defined $tmp_patterns[$i] && $oid_indexed =~ /$tmp_patterns[$i]/){
-		if ($loop > 1 && $error =~ /nosuch/i){ ##End of mib ??
-		    return $hash;
-		}
 		push @oid_list,$name_indexed;
 		push @patterns,$tmp_patterns[$i];
-		$hash->{$name}{$instance} = $value;
+		if ($return_type eq 'hash'){
+		    $value = &convert_value($format,$name,$type,$temp_value);
+		    $hash->{$name}{$instance} = $value;
+		}
+	    }
+	    else{
+		$test = 0;
+	    }
+	} 
+	if ($test){
+	    if ($loop > 1 && $error =~ /nosuch/i){ ##End of mib ??
+		return @walk_values;
+	    }
+	    if ($return_type eq 'array'){
+		@values = &format_array($format,$vars);
+		print "@values\n" if ($print); 
+		push @walk_values,@values;
 	    }
 	}
 	$loop++;
     }
+    if ($return_type eq 'array'){
+	return(@walk_values);
+    }
+    elsif ($return_type eq 'hash'){
+	return($hash);
+    }
+    else{
+	return(@walk_values);
+    }
+       
+	
+	
+    return @walk_values;
+    
+} # end sub walk
 
+sub walk_hash {
+    my($self, @args) = @_;
 
-    return $hash;
+    my($hash);
+
+    $SNMP::Util::Return_type = 'hash';
+    $hash = $self->walk(@args);
+    $SNMP::Util::Return_type = 'array';
+
+    $hash;
     
 } # end sub walk_hash
 
@@ -1313,6 +1162,18 @@ sub poll_value {
 	    $get_value = $self->get($format, $name);
 	    $get_value = '' unless defined $get_value;
 	    
+	    $elapsed_time = time - $time;
+	    if ($elapsed_time > $time_out) {
+		if (@value){
+		    &log('fail',"\n$name is not [@value] for device $IP at elapsed_time ($elapsed_time seconds)\n");
+		}
+		else{
+		    &log('fail',"\n$name is not $value for device $IP at elapsed_time ($elapsed_time seconds)\n");
+		}
+		return $self->error("oper: ", "SNMP::Util::poll_value failed\n");
+		$value = $get_value;
+		return;
+	    }
 	    if (@value){
 		if (grep(/$get_value/,@value)){
 		    &log('status',"\n$name $get_value = [@value] at elapsed_time ($elapsed_time seconds) for device $IP\n");
@@ -1328,19 +1189,6 @@ sub poll_value {
 	    }
 	    elsif (defined $get_value  && $get_value ne '') {
 		&log('status',"$name = $get_value at elapsed_time ($elapsed_time seconds) for device $IP       \r");
-	    }
-
-	    $elapsed_time = time - $time;
-	    if ($elapsed_time > $time_out) {
-		if (@value){
-		    &log('fail',"\n$name is not [@value] for device $IP at elapsed_time ($elapsed_time seconds)\n");
-		}
-		else{
-		    &log('fail',"\n$name is not $value for device $IP at elapsed_time ($elapsed_time seconds)\n");
-		}
-		return $self->error("oper: ", "SNMP::Util::poll_value failed\n");
-		$value = $get_value;
-		return;
 	    }
 	    sleep $delay;
 	}
@@ -1365,7 +1213,7 @@ sub poll_value {
 	    }
 	}
 	elsif (defined $get_value && $get_value eq $value) {
-	    &log('status',"Monitoring $name = $get_value at elapsed_time seconds      \r");
+	    &log('status',"Monitoring $name = $get_value at $elapsed_time seconds      \r");
 	    $stop = 0;
 	}
 	elsif(defined $get_value && $get_value ne $value) {
@@ -1903,7 +1751,7 @@ sub format_array {
        $tc,
        $status,
        $type,
-       $tmp_value,
+       $temp_value,
        $value,
        @format,
        @octets,
@@ -1920,7 +1768,7 @@ sub format_array {
 	($name,$oid) = &get_name_and_oid($name);
      	$instance = $vars->[$i]->[1];
 	$name_instance = "$name.$instance";
-	$tmp_value = $vars->[$i]->[2];
+	$temp_value = $vars->[$i]->[2];
 	$type = $vars->[$i]->[3];
 	
 	foreach $option (@format) {
@@ -1936,34 +1784,10 @@ sub format_array {
 		push @result, $type; 
 		next; 
 	    }
-	    if ($option eq 'e'){
-		#Convert the packed data to hex format (octet-string)
-		if ($type =~ /octet/i){
-		    $enum = &unpack_octet($name,$tmp_value);
-		}
-		elsif ($type =~ /ticks/i){
-		    $enum = &decode_uptime($tmp_value);
-		}
-		else{
-		    $enum = $tmp_value;
-		}
-		push @result, $enum;
-		next;
-	    }
-	    if ($option eq 'v') { 
-		#Convert the packed data to hex format (octet-string)
-		if ($type =~ /octet/i){
-		    $value = &unpack_octet($name,$tmp_value);
-		}	
-		elsif($type =~ /integer/i && $tmp_value =~ /^[a-zA-Z]+/){
-		    $value = &SNMP::mapInt([$name],$tmp_value);
-                    $value = $tmp_value if (!defined $value || $value eq '');
-		}
-		else{
-		    $value = $tmp_value;
-		}
+	    if ($option eq 'v' || $option eq 'e'){
+		$value = &convert_value($option,$name,$type,$temp_value);
 		push @result, $value;
-		next; 
+		next;
 	    }
 	    if ($option eq 'i') {
 		push @result, $instance; 
@@ -1984,6 +1808,85 @@ sub format_array {
 
 } # end sub format_array
 
+sub format_hash {
+    my($format, $vars) = @_;
+    my(
+       $enum,
+       $i,
+       $instance,
+       $name,
+       $name_instance,
+       $number_values,
+       $octet,
+       $octet_string,
+       $oid,
+       $option,
+       $tc,
+       $status,
+       $type,
+       $temp_value,
+       $value,
+       @format,
+       @octets,
+       @result,
+       );
+    
+    ## Variable init.
+    @format = split('', $format);
+
+    $number_values = @{$vars};
+    @result = ();
+    for ($i = 0; $i< $number_values; $i++){
+	$name = $vars->[$i]->[0];
+	($name,$oid) = &get_name_and_oid($name);
+     	$instance = $vars->[$i]->[1];
+	$name_instance = "$name.$instance";
+	$temp_value = $vars->[$i]->[2];
+	$type = $vars->[$i]->[3];
+
+	$value = &convert_value($format,$name,$type,$temp_value);
+
+	$hash->{$name}{$instance} = $value;
+
+	$hash;
+    }
+
+    return($hash);
+
+} # end sub format_array
+
+sub convert_value{
+    my($format,$name,$type,$temp_value) = @_;
+
+    if ($format =~ /e/){
+	#Convert the packed data to hex format (octet-string)
+	if ($type =~ /octet/i){
+	    $value = &unpack_octet($name,$temp_value);
+	}
+	elsif ($type =~ /integer/i){
+	    $value = $temp_value;
+	}
+	elsif ($type =~ /ticks/i) {
+	    $value = &decode_uptime($temp_value);
+	}
+	else{
+	    $value = $temp_value;
+	}
+    }
+    elsif ($format =~ /v/){
+	if ($type =~ /integer/i && $temp_value =~ /^[a-zA-Z]/){
+	    $value = &SNMP::mapInt([$name],$temp_value);
+	    $value = $temp_value if (!defined $value || $value eq '');
+	}
+	elsif ($type =~ /octet/i){
+	    $value = &unpack_octet($name,$temp_value);
+	}
+	else{
+	    $value = $temp_value;
+	}
+    }
+    $value;
+}
 
 sub get_name_and_oid{
     my($value) = @_;
@@ -2310,19 +2213,26 @@ SNMP::Util - Snmp modules to perform snmp set,get,walk,next,walk_hash etc.
 
 =head1 SYNOPSIS
 
-C<use SNMP::Util ();>
+C<use SNMP::Util;>
 
 
 ## Documentation (POD)
 =head1 NAME
 
- Perl SNMP utilities - SNMP::Util
+ Perl SNMP utilities - SNMP::Util - Version 1.2
+
 
 =head1 DESCRIPTION
 
 This Perl library is a set of utilities for configuring and monitoring SNMP
 based devices.  This library requires the UCD port of SNMP and the SNMP.pm
 module writted by Joe Marzot.
+
+=head1 Version
+    
+    1.0 Initial Release
+    1.1 Fixed Manifest File
+    1.2 Added get_hash / walk_hash now calls walk / Modified output in poll_value
 
 =head1 Software requirements
 
@@ -2336,6 +2246,7 @@ SNMP::Util application.
 =head1 Summary of functions
 
  get - snmpget and return formatted array
+ get_hash - snmpget and return hash
  get_set_restore - get value, set new range of values and restore value
  next - snmpnext and return formatted array
  ping_check - get uptime and return 1 if reachable
@@ -2523,8 +2434,8 @@ the 'e' option for the human readable display.
 The snmpget routine may be equated to an array if the formatting has more than
 one value or it may be equated to a scalar value if the formatting has only one
 value.  It must be equated to an array if the snmpget is a multi var bind.
- 
- 
+
+
 =head1 Input Formatting
 
 The input supplied to the SNMP functions is designed to be very flexible and
@@ -2651,6 +2562,22 @@ statement.
 	$result = $snmp->get('e','ifAdminStatus.1')
         Note: As shown above, the result is a scalar if only one value is returned
 
+=head2 get_hash
+
+This method will do an snmpget and return a hash.   The format for the hash is
+(value = $hash->{mibname}{index}).
+
+ 
+ example: $hash = $snmp->get_hash('ne','ifIndex.1','ifIndex.2',
+				  'ifOperStatus.1','ifOperStatus.2'); 
+
+ $hash->{ifIndex}{1} = 1
+ $hash->{ifIndex}{2} = 2
+ $hash->{ifOperStatus}{1} = up
+ $hash->{ifOperStatus}{2} = up
+
+ Note: Valid format statements for get_hash are 'ne' or 'nv'
+ 
 =head2 get_set_restore
 
 The get_set_restore will get the variable, set it to a range and restore the value

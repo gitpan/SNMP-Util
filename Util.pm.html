@@ -16,7 +16,7 @@ SNMP::Util - Snmp modules to perform snmp set,get,walk,next,walk_hash etc.
 <A NAME="Util.pm_synopsis_0">
 SYNOPSIS</A>
 </H1>
-<CODE>use SNMP::Util ();</CODE>
+<CODE>use SNMP::Util;</CODE>
 <p>## Documentation (POD)
 <p><p><hr>
 
@@ -26,7 +26,7 @@ NAME</A>
 </H1>
 
 <XMP>
- Perl SNMP utilities - SNMP::Util
+ Perl SNMP utilities - SNMP::Util - Version 1.2
 
 </XMP>
 <p><p><hr>
@@ -38,6 +38,20 @@ DESCRIPTION</A>
 This Perl library is a set of utilities for configuring and monitoring SNMP
 based devices.  This library requires the UCD port of SNMP and the SNMP.pm
 module writted by Joe Marzot.
+<p><p><hr>
+
+<H1> 
+<A NAME="Util.pm_version_0">
+Version</A>
+</H1>
+
+<XMP>
+    
+    1.0 Initial Release
+    1.1 Fixed Manifest File
+    1.2 Added get_hash / walk_hash now calls walk / Modified output in poll_value
+
+</XMP>
 <p><p><hr>
 
 <H1> 
@@ -61,6 +75,7 @@ Summary of functions</A>
 
 <XMP>
  get - snmpget and return formatted array
+ get_hash - snmpget and return hash
  get_set_restore - get value, set new range of values and restore value
  next - snmpnext and return formatted array
  ping_check - get uptime and return 1 if reachable
@@ -272,8 +287,6 @@ the 'e' option for the human readable display.
 <p>The snmpget routine may be equated to an array if the formatting has more than
 one value or it may be equated to a scalar value if the formatting has only one
 value.  It must be equated to an array if the snmpget is a multi var bind.
- 
- 
 <p><p><hr>
 
 <H1> 
@@ -429,6 +442,26 @@ statement.
         $result[1] = 'up'
         $result = $snmp->get('e','ifAdminStatus.1')
         Note: As shown above, the result is a scalar if only one value is returned
+
+</XMP>
+<p>
+<H2> 
+<A NAME="Util.pm_get_hash_0">
+get_hash</A>
+</H2>
+This method will do an snmpget and return a hash.   The format for the hash is
+(value = <STRONG>$hash</STRONG>-&gt;{mibname}{index}).
+<p>
+<XMP>
+ 
+ example: $hash = $snmp->get_hash('ne','ifIndex.1','ifIndex.2',
+                                  'ifOperStatus.1','ifOperStatus.2'); 
+ $hash->{ifIndex}{1} = 1
+ $hash->{ifIndex}{2} = 2
+ $hash->{ifOperStatus}{1} = up
+ $hash->{ifOperStatus}{2} = up
+ Note: Valid format statements for get_hash are 'ne' or 'nv'
+ 
 
 </XMP>
 <p>
