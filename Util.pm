@@ -16,7 +16,7 @@ use SNMP;
 use FileHandle qw(autoflush);
 use SNMP::Util_env;
 use vars qw($VERSION);
-$VERSION = "1.3";
+$VERSION = "1.4";
 
 
 autoflush STDOUT;
@@ -1854,10 +1854,9 @@ sub format_hash {
 
 	$hash->{$name}{$instance} = $value;
 
-	$hash;
     }
 
-    return($hash);
+    $hash;
 
 } # end sub format_array
 
@@ -2227,7 +2226,7 @@ C<use SNMP::Util;>
 ## Documentation (POD)
 =head1 NAME
 
- Perl SNMP utilities - SNMP::Util - Version 1.3
+ Perl SNMP utilities - SNMP::Util - Version 1.4
 
 
 =head1 DESCRIPTION
@@ -2242,6 +2241,7 @@ module writted by Joe Marzot.
     1.1 Fixed Manifest File
     1.2 Added get_hash / walk_hash now calls walk / Modified output in poll_value
     1.3 Added use strict to library and fixed some bugs with my vars
+    1.4 Fixed code to elminate perl warning
 
 =head1 Software requirements
 

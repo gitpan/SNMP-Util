@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl 
 
 ## Wayne Marquette
 ##
@@ -679,7 +679,7 @@ else{
  
 
 print "The next sequence of tests will set interface $interface to down then up\n";
-print "Enter return to continue of skip to skip test: ";
+print "Enter return to continue or skip to skip test: ";
 chomp($answer = <stdin>);
 goto SKIP if ($answer =~ /skip/i);
 

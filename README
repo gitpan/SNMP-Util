@@ -1,3 +1,20 @@
+
+  Description
+  __________
+
+  This is a set of snmp utilities that work with Joe Marzot's SNMP Perl library.
+  Refer the the html file in this directory for details.
+
+
+  Version
+  ________
+
+    1.0 Initial Release
+    1.1 Fixed Manifest File
+    1.2 Added get_hash / walk_hash now calls walk / Modified output in poll_value
+    1.3 Added use strict to library and fixed some bugs with my vars
+    1.4 Fixed code to elminate perl warning
+
   Documentation
   -------------
 
