@@ -16,6 +16,7 @@
     1.4 Fixed code to elminate perl warning
     1.5 Changed all mapInt functions to mapEnum - (support for mapInt not in
         Joe Marzot's version 1.8).
+    1.6 Updated docs (html and text)
 
   Documentation
   -------------

@@ -16,7 +16,7 @@ use SNMP;
 use FileHandle qw(autoflush);
 use SNMP::Util_env;
 use vars qw($VERSION);
-$VERSION = "1.5";
+$VERSION = "1.6";
 
 
 autoflush STDOUT;
@@ -2226,7 +2226,7 @@ C<use SNMP::Util;>
 ## Documentation (POD)
 =head1 NAME
 
- Perl SNMP utilities - SNMP::Util - Version 1.5
+ Perl SNMP utilities - SNMP::Util - Version 1.6
 
 
 =head1 DESCRIPTION
@@ -2244,6 +2244,7 @@ module writted by Joe Marzot.
     1.4 Fixed code to elminate perl warning
     1.5 Changed all mapInt functions to mapEnum - (support for mapInt not in 
         Joe Marzot's version 1.8).
+    1.6 Updated docs html and text
 
 =head1 Software requirements
 
