@@ -1,18 +1,16 @@
 NAME
-    SNMP::Util - Snmp modules to perform snmp set,get,walk,next,walk_hash
-    etc.
+    SNMP::Util - Snmp modules to perform snmp set,get,walk,next,walk_hash etc.
 
 SYNOPSIS
     `use SNMP::Util;'
 
     ## Documentation (POD) =head1 NAME
 
-     Perl SNMP utilities - SNMP::Util - Version 1.6
+     Perl SNMP utilities - SNMP::Util - Version 1.7
 
 DESCRIPTION
-    This Perl library is a set of utilities for configuring and monitoring
-    SNMP based devices. This library requires the UCD port of SNMP and the
-    SNMP.pm module writted by Joe Marzot.
+    This Perl library is a set of utilities for configuring and monitoring SNMP based devices. This library requires
+    the UCD port of SNMP and the SNMP.pm module writted by Joe Marzot.
 
 Version
     
@@ -24,9 +22,9 @@ Version
     1.5 Changed all mapInt functions to mapEnum - (support for mapInt not in 
         Joe Marzot's version 1.8).
     1.6 Updated docs html and text
+    1.7 Includes patches from Charles Anderson
 Software requirements
-    The following applications need to be built and installed before running
-    the SNMP::Util application.
+    The following applications need to be built and installed before running the SNMP::Util application.
 
         ucd-snmp-3.5 - ftp:://ftp.ece.ucdavis.edu:/pub/snmp/ucd-snmp.tar.gz
         SNMP-1.8 - www.perl.com/CPAN
@@ -47,8 +45,7 @@ Summary of functions
      walk_hash - snmpwalk and return hash ($hash->{mibname}{index} = value)
 
 Creation on the SNMP::Util object
-    You must first do a use statement to pull in the library. Then the snmp
-    object can be created.
+    You must first do a use statement to pull in the library. Then the snmp object can be created.
 
      #!/usr/local/lib/perl
      use lib "put lib path here" 
@@ -109,8 +106,7 @@ How to use the object for a simple snmpget
                  and $uptime contains the system uptime in 10ths of seconds
 
 MIB Loading
-    The SNMP::Util module loads the mib using the SNMP::Util_env.pm module
-    by using the following statements.
+    The SNMP::Util module loads the mib using the SNMP::Util_env.pm module by using the following statements.
 
      use SNMP::Util_env
      # Initialize mib
@@ -129,11 +125,9 @@ MIB Loading
      You can specify whatever MIBS you would like to load.
 
 Error Handling method
-    All error handling is done through the error handling method (error).
-    The error message can be obtained by using the method (errmsg) The
-    detailed error message can be obtained by using the method
-    (errmsg_detail) This error method returns a boolean result to indicate
-    if an error ocurred
+    All error handling is done through the error handling method (error). The error message can be obtained by using
+    the method (errmsg) The detailed error message can be obtained by using the method (errmsg_detail) This error
+    method returns a boolean result to indicate if an error ocurred
 
      example:
 
@@ -145,11 +139,9 @@ Error Handling method
         }
 
 Print Output Logging
-    The printing of output is controlled by the logging routine. the amount
-    of output is configured by setting the MAX_LOG_LEVEL environment
-    variable. There are four levels of output logging:
-    (none,status,fail,debug). You may also set the logging using the global
-    variable Max_log_level.
+    The printing of output is controlled by the logging routine. the amount of output is configured by setting the
+    MAX_LOG_LEVEL environment variable. There are four levels of output logging: (none,status,fail,debug). You may
+    also set the logging using the global variable Max_log_level.
 
      none = print  no output (use errmsg only for errors)
      status = print general status information
@@ -174,8 +166,7 @@ Print Output Logging
         Note: error index = the index of the var bind that failed
 
 Formatting SNMP output (get, next, walk)
-    The SNMP utilities have a formatting function which will format the
-    return values which are most cases an array.
+    The SNMP utilities have a formatting function which will format the return values which are most cases an array.
 
      The format options are specified as strings as follows:
      
@@ -202,19 +193,17 @@ Formatting SNMP output (get, next, walk)
      Note: Any format can be used for the (get,walk,next routines)
            Only 'e' or 'v' is needed in the walk_hash routine.
 
-    This formatting was designed to allow the user to format the output in
-    whatever format they need for there application. You may want to use the
-    'v' option when comparing timetick values, but you may want to use the
-    'e' option for the human readable display.
+    This formatting was designed to allow the user to format the output in whatever format they need for there
+    application. You may want to use the 'v' option when comparing timetick values, but you may want to use the 'e'
+    option for the human readable display.
 
-    The snmpget routine may be equated to an array if the formatting has
-    more than one value or it may be equated to a scalar value if the
-    formatting has only one value. It must be equated to an array if the
-    snmpget is a multi var bind.
+    The snmpget routine may be equated to an array if the formatting has more than one value or it may be equated to a
+    scalar value if the formatting has only one value. It must be equated to an array if the snmpget is a multi var
+    bind.
 
 Input Formatting
-    The input supplied to the SNMP functions is designed to be very flexible
-    and allows the user to use shortcuts to apply instances to variables.
+    The input supplied to the SNMP functions is designed to be very flexible and allows the user to use shortcuts to
+    apply instances to variables.
 
   Input formatting options for the get,next,walk
 
@@ -228,14 +217,12 @@ Input Formatting
      $snmp->get('e',1,'ifIndex','ifAdminStatus','ifOperStatus')
      $snmp->get('e',1,'1.3.6.1.2.1.2.2.1.1','1.3.6.1.2.1.2.2.1.7','1.3.6.1.2.1.2.2.1.8')
 
-    Long format name,instance,name,instance etc of oid,instance,oid,instance
-    etc
+    Long format name,instance,name,instance etc of oid,instance,oid,instance etc
 
      $snmp->get('e','ifIndex',1,'ifAdminStatus',1,'ifOperStatus',1)
      $snmp->get('e','1.3.6.1.2.1.2.2.1.1',1,'1.3.6.1.2.1.2.2.1.7',1,'1.3.6.1.2.1.2.2.1.8',1)
 
-    You may also set up an array for any of the above formats and pass the
-    array into the get function as follows:
+    You may also set up an array for any of the above formats and pass the array into the get function as follows:
 
      @oids = ('ifIndex.1','ifAdminStatus.1','ifOperStatus.1')
      $snmp->get('e',@oids)
@@ -323,8 +310,7 @@ Input Formatting
 
   get
 
-    The get will do a snmpget and return an array specified by the format
-    statement.
+    The get will do a snmpget and return an array specified by the format statement.
 
      Usage: @result = $snmp->get('ne','ifAdminStatus.1')
             $result[0] = ifAdminStatus.1
@@ -335,8 +321,7 @@ Input Formatting
 
   get_hash
 
-    This method will do an snmpget and return a hash. The format for the
-    hash is (value = $hash->{mibname}{index}).
+    This method will do an snmpget and return a hash. The format for the hash is (value = $hash->{mibname}{index}).
 
      
      example: $hash = $snmp->get_hash('ne','ifIndex.1','ifIndex.2',
@@ -351,8 +336,7 @@ Input Formatting
      
     =head2 get_set_restore
 
-    The get_set_restore will get the variable, set it to a range and restore
-    the value
+    The get_set_restore will get the variable, set it to a range and restore the value
 
      Usage:  @result = $snmp->get_set_restore('1..10','ifAdminStatus.1');
              where the value '1..10' is the range of values
@@ -361,8 +345,7 @@ Input Formatting
 
   next
 
-    The next will do a snmpnext and return an array specified by the format
-    statement.
+    The next will do a snmpnext and return an array specified by the format statement.
 
      Usage:  @result = $snmp->next('ne','ifAdminStatus.1')
             $result[0] = ifAdminStatus.2
@@ -373,8 +356,7 @@ Input Formatting
      
     =head2 ping_check
 
-    The ping_check will do a snmpget of uptime and return 1 if device is
-    alive
+    The ping_check will do a snmpget of uptime and return 1 if device is alive
 
   ping_check_exit
 
@@ -382,23 +364,21 @@ Input Formatting
 
   poll_device
 
-    The poll_device will loop on the snmpget of uptime command until the
-    device is reachable. The loop will exit once the poll_timeout time is
-    reached (default = 5 minutes).
+    The poll_device will loop on the snmpget of uptime command until the device is reachable. The loop will exit once
+    the poll_timeout time is reached (default = 5 minutes).
 
   poll_devices
 
-    The poll_devices will do a snmpget of uptime on several devices until
-    the device are reachable. The loop will exit once the poll_timeout time
-    is reached (default = 5 minutes).
+    The poll_devices will do a snmpget of uptime on several devices until the device are reachable. The loop will exit
+    once the poll_timeout time is reached (default = 5 minutes).
 
      $snmp->poll_devices(@IP_array);
      where @IP_array = array of IP addresses
 
   poll_value
 
-    The poll value method will poll a mib variable until it reaches that
-    state and returns the amount of time it took to reach that state
+    The poll value method will poll a mib variable until it reaches that state and returns the amount of time it took
+    to reach that state
 
      Usage: $snmp->poll_value(-oid => "ifAdminStatus.$interface",
                              -state => 'up',
@@ -441,8 +421,7 @@ Input Formatting
 
   set_get
 
-    The set_get will set a group of variables,get,check and return 1 if
-    passed
+    The set_get will set a group of variables,get,check and return 1 if passed
 
      Usage:  @result = $snmp->set(
                                  index => 1,
@@ -451,9 +430,8 @@ Input Formatting
 
   walk
 
-    The walk will do a snmpwalk and return an array specified by the format
-    statement. It also has a special print option to print out each loop in
-    the walk. This method is capable of doing multivarbind walks.
+    The walk will do a snmpwalk and return an array specified by the format statement. It also has a special print
+    option to print out each loop in the walk. This method is capable of doing multivarbind walks.
 
      Usage: @result = $snmp->walk(-format => 'ne',
                                    -oids =>['ifAdminStatus'],
@@ -473,9 +451,8 @@ Input Formatting
 
   walk_hash
 
-    The walk_hash will do a snmpwalk and return a hash with the value
-    specified by the format. This method is capable of doing multivarbind
-    walks.
+    The walk_hash will do a snmpwalk and return a hash with the value specified by the format. This method is capable
+    of doing multivarbind walks.
 
      Usage: $result = $snmp->walk_hash('e','ifIndex','ifAdminStatus','ifOperStatus')
             $result->{ifIndex}{1} = 1
