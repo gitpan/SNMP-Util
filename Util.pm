@@ -16,7 +16,7 @@ use SNMP;
 use FileHandle qw(autoflush);
 use SNMP::Util_env;
 use vars qw($VERSION);
-$VERSION = "1.0";
+$VERSION = "1.1";
 
 
 autoflush STDOUT;
@@ -1365,10 +1365,10 @@ sub poll_value {
 	    }
 	}
 	elsif (defined $get_value && $get_value eq $value) {
-	    &log('status',"\n$name is now $get_value at elapsed_time ($elapsed_time seconds) for device $IP\n");
+	    &log('status',"Monitoring $name = $get_value at elapsed_time seconds      \r");
 	    $stop = 0;
 	}
-	elsif(defined $get_value) {
+	elsif(defined $get_value && $get_value ne $value) {
 	    &log('fail',"\n $name = $get_value should be $value at $elapsed_time seconds\n");
 	    return $self->error("oper: ", "SNMP::Util::poll_value  Monitoring failed\n");
 	}
